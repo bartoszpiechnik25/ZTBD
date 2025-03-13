@@ -1,4 +1,4 @@
-FROM python:3.13-slim-bookworm
+FROM golang:1.24-bookworm AS builder
 
 WORKDIR /app
 
@@ -8,10 +8,17 @@ ARG END_YEAR
 ENV BEGIN_YEAR=${BEGIN_YEAR}
 ENV END_YEAR=${END_YEAR}
 
-COPY requirements.txt ./
+COPY go.mod ./
+RUN go mod download
 
-RUN pip install -r requirements.txt
+COPY . /app
 
-COPY parser.py parser.py
+RUN go build -o /initializer
 
-CMD [ "python", "parser.py" ]
+FROM debian:12-slim 
+
+WORKDIR /
+
+COPY --from=builder /initializer /initializer
+
+ENTRYPOINT [ "/initializer" ]
