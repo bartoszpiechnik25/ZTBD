@@ -81,6 +81,7 @@ CREATE TABLE award (
     program_officer_id INT,
     organization_id INT,
     award_instrument_id INT,
+    abstract_text TEXT,
     FOREIGN KEY (program_officer_id) REFERENCES program_officer(id),
     FOREIGN KEY (organization_id) REFERENCES organization(id),
     FOREIGN KEY (award_instrument_id) REFERENCES award_instrument(id)

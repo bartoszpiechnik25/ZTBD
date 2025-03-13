@@ -77,6 +77,7 @@ create table award (
 	award_effective_date date,
 	award_expiration_date date,
 	award_amount integer,
+	abstract_text text,
 	program_officer_id integer references program_officer(id),
 	organization_id integer references organization(id),
 	award_instrument_id integer references award_instrument(id)

@@ -1,4 +1,11 @@
 services:
+  initializer:
+    container_name: db-initializer
+    build:
+      context: ./parser/
+    environment:
+      BEGIN_YEAR: 2014
+      END_YEAR: 2024
   postgres_db:
     container_name: postgres-ztbd
     image: postgres:17.4
@@ -11,6 +18,9 @@ services:
       - postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    depends_on:
+      initializer:
+        condition: service_completed_successfully
   mysql:
     image: mysql:9.2
     container_name: mysql-ztbd
@@ -25,6 +35,9 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./mysql/db.sql:/docker-entrypoint-initdb.d/db.sql
+    depends_on:
+      initializer:
+        condition: service_completed_successfully
 
 volumes:
   postgres-data:
