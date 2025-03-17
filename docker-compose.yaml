@@ -6,6 +6,9 @@ services:
     environment:
       BEGIN_YEAR: 2014
       END_YEAR: 2024
+      VOLUME_DIR: "/app/data"
+    volumes:
+      - ./parser/data:/app/data
   postgres_db:
     container_name: postgres-ztbd
     image: postgres:17.4
