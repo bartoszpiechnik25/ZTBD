@@ -38,6 +38,30 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./mysql/db.sql:/docker-entrypoint-initdb.d/db.sql
+  mongo7:
+    container_name: mongo7-ztbd
+    image: mongo:7
+    restart: always
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_DATABASE: ztbd
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: passwd
+    volumes:
+      - ./mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
+  mongo8:
+    container_name: mongo8-ztbd
+    image: mongo:8
+    restart: always
+    ports:
+      - '27018:27017'
+    environment:
+      MONGO_INITDB_DATABASE: ztbd
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: passwd
+    volumes:
+      - ./mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
     depends_on:
       initializer:
         condition: service_completed_successfully
@@ -45,3 +69,5 @@ services:
 volumes:
   postgres-data:
   mysql-data:
+  mongo7-data:
+  mongo8-data:
