@@ -4,12 +4,21 @@ services:
     build:
       context: ./parser/
     environment:
-      BEGIN_YEAR: 2014
+      BEGIN_YEAR: 2010
       END_YEAR: 2024
       VOLUME_DIR: "/app/data"
     volumes:
       - ./parser/data:/app/data
-  postgres_db:
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_started
+      mongo7:
+        condition: service_started
+      mongo8:
+        condition: service_started
+  postgres:
     container_name: postgres-ztbd
     image: postgres:17.4
     restart: always
@@ -17,13 +26,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: extensive_testing
     volumes:
-      - ./postgres/db.sql:/docker-entrypoint-initdb.d/db.sql
       - postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    depends_on:
-      initializer:
-        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      retries: 3
   mysql:
     image: mysql:9.2
     container_name: mysql-ztbd
@@ -37,7 +46,6 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./mysql/db.sql:/docker-entrypoint-initdb.d/db.sql
   mongo7:
     container_name: mongo7-ztbd
     image: mongo:7
@@ -49,6 +57,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: passwd
     volumes:
+      - mongo7-data:/data/db
       - ./mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
   mongo8:
     container_name: mongo8-ztbd
@@ -61,10 +70,8 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: passwd
     volumes:
+      - mongo8-data:/data/db
       - ./mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
-    depends_on:
-      initializer:
-        condition: service_completed_successfully
 
 volumes:
   postgres-data:

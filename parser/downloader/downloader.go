@@ -4,13 +4,16 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"github.com/melbahja/got"
 	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
 	"ztbd/models"
+
+	"github.com/melbahja/got"
+	"go.mongodb.org/mongo-driver/mongo"
+	"gorm.io/gorm"
 )
 
 const BASE_URL = "https://www.nsf.gov/awardsearch/download?DownloadFileName=%s&All=true&isJson=true"
@@ -20,6 +23,7 @@ type Downloader struct {
 }
 
 func New(baseDir string) *Downloader {
+
 	return &Downloader{
 		BaseDir: baseDir,
 	}
@@ -73,7 +77,7 @@ func (d *Downloader) Download(year string) (*bytes.Reader, int64, error) {
 	return byteReader, int64(len(zipData)), nil
 }
 
-func (d *Downloader) Produce(year string, jobChan chan<- *models.ParseJob) {
+func (d *Downloader) Produce(year string, jobChan chan<- *models.ParseJob, postgres, mysql *gorm.DB, mongo7, mongo8 *mongo.Client) {
 
 	slog.Info(fmt.Sprintf("Starting pipeline for: %s", year))
 	start := time.Now()
@@ -88,9 +92,13 @@ func (d *Downloader) Produce(year string, jobChan chan<- *models.ParseJob) {
 	zipReader, err := zip.NewReader(bytes, length)
 	for _, zipFile := range zipReader.File {
 		jobChan <- &models.ParseJob{
-			Year:    year,
-			File:    zipFile,
-			BaseDir: d.BaseDir,
+			Year:       year,
+			File:       zipFile,
+			BaseDir:    d.BaseDir,
+			PostgresDB: postgres,
+			MySqlDB:    mysql,
+			Mongo7:     mongo7,
+			Mongo8:     mongo8,
 		}
 	}
 }
@@ -109,7 +117,30 @@ func Consume(job *models.ParseJob) {
 		return
 	}
 
-	_, err = io.Copy(outFile, rc)
+	award, body, err := job.ParseJson()
+	if err != nil {
+		return
+	}
+	err = models.Insert(award, job.PostgresDB)
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	// err = models.Insert(award, job.MySqlDB)
+	// if err != nil {
+	// 	slog.Error(err.Error())
+	// }
+
+	err = models.InsertMongo(award, job.Mongo7)
+	if err != nil {
+		slog.Error(err.Error())
+	}
+
+	err = models.InsertMongo(award, job.Mongo8)
+	if err != nil {
+		slog.Error(err.Error())
+	}
+
+	_, err = io.Copy(outFile, bytes.NewReader(body))
 
 	outFile.Close()
 	rc.Close()

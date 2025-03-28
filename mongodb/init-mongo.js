@@ -4,5 +4,5 @@ db.createUser({
 	pwd: "passwd",
 	roles: [{ role: "readWrite", db: "ztbd" }]
 });
-db.createCollection('test_collection');
-print('Database initialized: ztbd with user.');
+db.createCollection("awards")
+print('Database initialized: ztbd with user: tester.');
